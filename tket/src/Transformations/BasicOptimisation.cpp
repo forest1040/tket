@@ -51,7 +51,7 @@ Transform remove_redundancies() { return Transform(redundancy_removal); }
 // basis measurement so that eg. -H-X-X-H- always annihilates to -----
 static bool redundancy_removal(Circuit &circ) {
   bool success = false;
-  tket_log()->trace("start redundancy_removal(): depth: " + std::to_string(circ.depth());
+  tket_log()->trace("start redundancy_removal(): depth: " + std::to_string(circ.depth()));
   bool found_redundancy = true;
   IndexMap im = circ.index_map();
   std::set<IVertex> old_affected_verts;
@@ -71,7 +71,7 @@ static bool redundancy_removal(Circuit &circ) {
   }
   circ.remove_vertices(
       bin, Circuit::GraphRewiring::No, Circuit::VertexDeletion::Yes);
-  tket_log()->trace("end redundancy_removal(): depth: " + std::to_string(circ.depth());
+  tket_log()->trace("end redundancy_removal(): depth: " + std::to_string(circ.depth()));
   return success;
 }
 
