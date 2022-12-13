@@ -36,6 +36,8 @@
 #include "Transform.hpp"
 #include "Utils/GraphHeaders.hpp"
 
+#include <tklog/TketLog.hpp>
+
 namespace tket {
 
 namespace Transforms {
@@ -317,6 +319,8 @@ Transform three_qubit_squash(OpType target_2qb_gate) {
   return Transform([target_2qb_gate](Circuit &circ) {
     bool changed = false;
 
+    tket_log()->trace("start three_qubit_squash(): depth: " + std::to_string(circ.depth()));
+
     // Step through the vertices in topological order.
     QISystem Is(circ, target_2qb_gate);  // set of "live" interactions
     for (const Vertex &v : circ.vertices_in_order()) {
@@ -384,6 +388,8 @@ Transform three_qubit_squash(OpType target_2qb_gate) {
 
     // Delete removed vertices.
     Is.destroy_bin();
+
+    tket_log()->trace("end three_qubit_squash(): depth: " + std::to_string(circ.depth()));
 
     return changed;
   });

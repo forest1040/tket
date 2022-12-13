@@ -30,17 +30,21 @@
 #include "ThreeQubitSquash.hpp"
 #include "Transform.hpp"
 
+#include <tklog/TketLog.hpp>
+
 namespace tket {
 
 namespace Transforms {
 
 Transform peephole_optimise_2q() {
+  tket_log()->trace("peephole_optimise_2q()");
   return (
       synthesise_tket() >> two_qubit_squash() >> hyper_clifford_squash() >>
       synthesise_tket());
 }
 
 Transform full_peephole_optimise(bool allow_swaps, OpType target_2qb_gate) {
+  tket_log()->trace("full_peephole_optimise()");
   switch (target_2qb_gate) {
     case OpType::CX:
       return (
@@ -61,21 +65,25 @@ Transform full_peephole_optimise(bool allow_swaps, OpType target_2qb_gate) {
 }
 
 Transform canonical_hyper_clifford_squash() {
+  tket_log()->trace("canonical_hyper_clifford_squash()");
   return optimise_via_PhaseGadget() >> two_qubit_squash() >>
          hyper_clifford_squash();
 }
 
 Transform hyper_clifford_squash() {
+  tket_log()->trace("hyper_clifford_squash()");
   return decompose_multi_qubits_CX() >> clifford_simp();
 }
 
 Transform clifford_simp(bool allow_swaps) {
+  tket_log()->trace("clifford_simp()");
   return decompose_cliffords_std() >> clifford_reduction(allow_swaps) >>
          decompose_multi_qubits_CX() >> singleq_clifford_sweep() >>
          squash_1qb_to_tk1();
 }
 
 Transform synthesise_tk() {
+  tket_log()->trace("synthesise_tk()");
   Transform seq = commute_through_multis() >> remove_redundancies();
   Transform rep = repeat(seq);
   Transform synth = decompose_multi_qubits_TK2() >> remove_redundancies() >>
@@ -87,6 +95,8 @@ Transform synthesise_tk() {
 }
 
 Transform synthesise_tket() {
+  tket_log()->trace("synthesise_tket()");
+
   Transform seq = commute_through_multis() >> remove_redundancies();
   Transform rep = repeat(seq);
   Transform synth = decompose_multi_qubits_CX() >> remove_redundancies() >>
@@ -100,6 +110,7 @@ Transform synthesise_tket() {
 static Transform CXs_from_phase_gadgets(CXConfigType cx_config) {
   return Transform([=](Circuit &circ) {
     bool success = false;
+    tket_log()->trace("CXs_from_phase_gadgets()");
     VertexList bin;
     auto [i, end] = boost::vertices(circ.dag);
     for (auto next = i; i != end; i = next) {
@@ -121,12 +132,14 @@ static Transform CXs_from_phase_gadgets(CXConfigType cx_config) {
 }
 
 Transform optimise_via_PhaseGadget(CXConfigType cx_config) {
+  tket_log()->trace("optimise_via_PhaseGadget()");
   return rebase_tket() >> decompose_PhaseGadgets() >> smash_CX_PhaseGadgets() >>
          align_PhaseGadgets() >> CXs_from_phase_gadgets(cx_config) >>
          synthesise_tket();
 }
 
 Transform synthesise_OQC() {
+  tket_log()->trace("synthesise_OQC()");
   return Transform([](Circuit &circ) {
     Transform rep_zx = squash_1qb_to_pqp(OpType::Rx, OpType::Rz) >>
                        commute_through_multis() >> remove_redundancies();
@@ -139,6 +152,7 @@ Transform synthesise_OQC() {
 
 /* Returns a Circuit with only HQS allowed Ops (Rz, PhasedX, ZZMax) */
 Transform synthesise_HQS() {
+  tket_log()->trace("synthesise_HQS()");
   return Transform([](Circuit &circ) {
     Transform single_loop =
         remove_redundancies() >> commute_through_multis() >> reduce_XZ_chains();
@@ -154,6 +168,7 @@ Transform synthesise_HQS() {
 
 // TODO: Make the XXPhase gates combine
 Transform synthesise_UMD() {
+  tket_log()->trace("synthesise_UMD()");
   return Transform([](Circuit &circ) {
            bool success = (synthesise_tket() >> decompose_ZX() >>
                            decompose_MolmerSorensen() >> squash_1qb_to_tk1())

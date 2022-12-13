@@ -31,6 +31,8 @@
 #include "Utils/EigenConfig.hpp"
 #include "Utils/MatrixAnalysis.hpp"
 
+#include <tklog/TketLog.hpp>
+
 namespace tket {
 
 namespace Transforms {
@@ -49,6 +51,7 @@ Transform remove_redundancies() { return Transform(redundancy_removal); }
 // basis measurement so that eg. -H-X-X-H- always annihilates to -----
 static bool redundancy_removal(Circuit &circ) {
   bool success = false;
+  tket_log()->trace("start redundancy_removal(): depth: " + std::to_string(circ.depth());
   bool found_redundancy = true;
   IndexMap im = circ.index_map();
   std::set<IVertex> old_affected_verts;
@@ -68,6 +71,7 @@ static bool redundancy_removal(Circuit &circ) {
   }
   circ.remove_vertices(
       bin, Circuit::GraphRewiring::No, Circuit::VertexDeletion::Yes);
+  tket_log()->trace("end redundancy_removal(): depth: " + std::to_string(circ.depth());
   return success;
 }
 
@@ -410,6 +414,9 @@ Transform two_qubit_squash(
 
   return Transform([target_2qb_gate, cx_fidelity, allow_swaps](Circuit &circ) {
     bool success = false;
+
+    tket_log()->trace("start two_qubit_squash(): depth: " + std::to_string(circ.depth()));
+
     VertexList bin;
     // Get map from vertex/port to qubit number
     std::map<VertPort, Qubit> v_to_qb;
@@ -538,6 +545,9 @@ Transform two_qubit_squash(
     if (success) {
       squash_1qb_to_tk1().apply(circ);
     }
+
+    tket_log()->trace("end two_qubit_squash(): depth: " + std::to_string(circ.depth()));
+
     return success;
   });
 }
@@ -573,6 +583,8 @@ static void extend_SWAP_chain(
         &swap_chains,
     Edge entry_edge, Node entry_node, const Edge &match, const Circuit &circ,
     const DeviceCharacterisation &characterisation) {
+  tket_log()->trace("start extend_SWAP_chain(): depth: " + std::to_string(circ.depth()));
+
   for (auto it = swap_chains.begin(); it != swap_chains.end(); ++it) {
     if ((*it).first.back().first == match) {
       // extend chain, adding a new pair of edge and double to the end
@@ -580,6 +592,7 @@ static void extend_SWAP_chain(
           {entry_edge,
            1.0 - characterisation.get_error(
                      entry_node, circ.get_OpType_from_Vertex((*it).second))});
+      tket_log()->trace("end extend_SWAP_chain(): depth: " + std::to_string(circ.depth()));
       return;
     }
   }
@@ -592,6 +605,9 @@ static void extend_SWAP_chain(
 // rewired into the edge with best error rate
 static bool find_rewire_sq(
     Circuit &circ, const DeviceCharacterisation &characterisation) {
+
+  tket_log()->trace("start find_rewire_sq(): depth: " + std::to_string(circ.depth()));
+
   std::list<std::pair<std::vector<std::pair<Edge, double>>, Vertex>>
       swap_chains;
   for (auto it = circ.begin(); it != circ.end(); ++it) {
@@ -634,16 +650,19 @@ static bool find_rewire_sq(
     }
     swap_chains.erase(swap_chains.begin());
   }
+  tket_log()->trace("end find_rewire_sq(): depth: " + std::to_string(circ.depth()));
   return success;
 }
 
 static Transform commute_SQ_gates_through_SWAPS_helper(
     const DeviceCharacterisation &characterisation) {
   return Transform([characterisation](Circuit &circ) {
+    tket_log()->trace("start commute_SQ_gates_through_SWAPS_helper(): depth: " + std::to_string(circ.depth()));
     bool success = false;
     while (find_rewire_sq(circ, characterisation)) {
       success = true;
     }
+    tket_log()->trace("end commute_SQ_gates_through_SWAPS_helper(): depth: " + std::to_string(circ.depth()));
     return success;
   });
 }
@@ -660,6 +679,7 @@ Transform commute_SQ_gates_through_SWAPS(const op_node_errors_t &node_errors) {
 Transform absorb_Rz_NPhasedX() {
   return Transform([](Circuit &circ) {
     bool success = false;
+    tket_log()->trace("start absorb_Rz_NPhasedX(): depth: " + std::to_string(circ.depth()));
     VertexSet all_bins;
 
     // Start by squashing Rz gates
@@ -779,6 +799,7 @@ Transform absorb_Rz_NPhasedX() {
     circ.remove_vertices(
         all_bins, Circuit::GraphRewiring::No, Circuit::VertexDeletion::Yes);
 
+    tket_log()->trace("end absorb_Rz_NPhasedX(): depth: " + std::to_string(circ.depth()));
     return success;
   });
 }
@@ -787,6 +808,7 @@ Transform ZZPhase_to_Rz() {
   // basic optimisation, replace ZZPhase with two Rz(1)
   return Transform([](Circuit &circ) {
     bool success = false;
+    tket_log()->trace("start ZZPhase_to_Rz(): depth: " + std::to_string(circ.depth()));
     VertexSet bin;
 
     BGL_FORALL_VERTICES(v, circ.dag, DAG) {
@@ -809,6 +831,7 @@ Transform ZZPhase_to_Rz() {
     }
     circ.remove_vertices(
         bin, Circuit::GraphRewiring::No, Circuit::VertexDeletion::Yes);
+    tket_log()->trace("end ZZPhase_to_Rz(): depth: " + std::to_string(circ.depth()));
     return success;
   });
 }
@@ -816,6 +839,7 @@ Transform ZZPhase_to_Rz() {
 Transform normalise_TK2() {
   return Transform([](Circuit &circ) {
     bool success = false;
+    tket_log()->trace("start normalise_TK2(): depth: " + std::to_string(circ.depth()));
     VertexSet bin;
 
     BGL_FORALL_VERTICES(v, circ.dag, DAG) {
@@ -848,6 +872,8 @@ Transform normalise_TK2() {
 
     circ.remove_vertices(
         bin, Circuit::GraphRewiring::No, Circuit::VertexDeletion::Yes);
+
+    tket_log()->trace("end normalise_TK2(): depth: " + std::to_string(circ.depth()));
 
     return success;
   });
